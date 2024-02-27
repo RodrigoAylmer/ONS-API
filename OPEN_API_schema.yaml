@@ -1,0 +1,573 @@
+openapi: 3.0.1
+info:
+  title: API de Garga Global
+  description: ""
+  contact:
+    email: sta-integracao-tec@ons.org.br
+  license:
+    name: DTA - Gerência de Arquitetura e Dados
+  version: 1.0.0
+servers:
+- url: https://integra.ons.org.br/api
+paths:
+  /autenticar:
+    post:
+      tags:
+      - Autenticacao
+      description: "Obter o token de autenticação para utilização da API.\r\n\r\n\
+        O usuário e senha devem ser os mesmos utilizados para se autenticar no SINTEGRE,\
+        \ mas para obter acesso aos dados da API, a permissão deve ser solicitada\
+        \ em: https://sintegre.ons.org.br/paginas/meu-perfil/meus-sistemas.aspx\r\n\
+        \r\n\r\n\r\n\tProcesso: Previsão e acompanhamento da carga\r\n\tSistema: APIAvaliacaoOperacao\
+        \ - API que fornece dados de avaliação da operação\r\n\r\n\r\n\r\nO acesso\
+        \ sera concedido após a aprovação do gestor do processo."
+      operationId: postAutenticar
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/autenticar'
+        required: true
+      responses:
+        200:
+          description: A operação ocorreu com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoAutenticacao'
+        401:
+          description: Falha na autenticação
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroAutenticacao'
+      x-codegen-request-body-name: body
+  /renovar:
+    post:
+      tags:
+      - Autenticacao
+      description: Renovar o token de autenticação para utilização da API
+      operationId: postRenovar
+      requestBody:
+        description: Refresh token gerado na autenticação
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/renovar'
+        required: true
+      responses:
+        200:
+          description: A operação ocorreu com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoAutenticacao'
+        401:
+          description: Falha na renovação do token de autenticação
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroAutenticacao'
+        404:
+          description: Falha na recuperação da resposta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+      x-codegen-request-body-name: body
+  /cargaglobal/historicocargaglobal/{tipoHistorico}:
+    get:
+      tags:
+      - Historico Carga Global
+      description: Obter a lista de histórico de carga global, a partir de um tipo
+        de histórico dentro de um instante (datetime)
+      operationId: getHistoricoCarga
+      parameters:
+      - name: pagina
+        in: query
+        description: Número da página solicitada. Cada página retorna no máximo 1000 itens.
+        required: true
+        schema:
+          type: integer
+          default: 1
+      - name: instante
+        in: query
+        description: YYYY-MM-DDTHH:MM:SS
+        schema:
+          type: string
+          format: date-time
+      - name: tipoHistorico
+        in: path
+        description: Tipo de histório de carga
+        required: true
+        schema:
+          type: string
+          enum:
+          - Diario
+          - Semanal
+          - Mensal
+          - Anual
+      responses:
+        200:
+          description: Lista de histórico de carga
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoricoCargaOutputmessage'
+        401:
+          description: Falha na autenticação
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        500:
+          description: Erro do Servidor Interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+      security:
+      - Bearer: []
+  /cargaglobal/cargav:
+    get:
+      tags:
+      - Historico Carga Global verificada por área de carga
+      description: "Obter a lista de histórico de carga verificada, a partir de uma
+        área de carga dentro de um intervalo de datas (datetime). As áreas de carga são:
+                <li>AC - Acre
+                <li>ALPE - Alagoas-Pernambuco
+                <li>AM - Amazonas
+                <li>AP - Amapá
+                <li>BAOE - Bahia Oeste
+                <li>BASE - Bahia-Sergipe
+                <li>CE - Ceará
+                <li>DF - Distrito Federal
+                <li>ES - Espírito Santo
+                <li>GO - Goiás
+                <li>MA, - Maranhão
+                <li>MG - Mina Gerais
+                <li>MS - Mato Grosso do Sul
+                <li>MT - Mato Grosso
+                <li>NE - Subsistema Nordeste
+                <li>PA - Pará
+                <li>PBRN - Paraíba-Rio Grande do Norte
+                <li>PENE - Perdas NE
+                <li>PES - Perdas S
+                <li>PESE - Perdas SECO
+                <li>PI - Piauí
+                <li>PR - Paraná
+                <li>RJ - Rio de Janeiro
+                <li>RO - Rondônia
+                <li>RR - Roraima
+                <li>RS - Rio Grande do Sul
+                <li>S - Subsistema Sul
+                <li>SC - Santa Catarina
+                <li>SECO - Subsistema Sudeste/Centro-Oeste
+                <li>SP - São Paulo
+                <li>TOCO - Tocantins
+                <li>TON - Tocantins Norte
+                <li>PEN - Perdas"
+
+      operationId: getCargav
+      parameters:
+      - name: cod_areacarga
+        in: query
+        description: Código da área de carga
+        required: true
+        schema:
+          type: string
+      - name: dat_referencia_ini
+        in: query
+        description: YYYY-MM-DD
+        required: true
+        schema:
+          type: string
+          format: date-time
+      - name: dat_referencia_fim
+        in: query
+        description: YYYY-MM-DD
+        required: true
+        schema:
+          type: string
+          format: date-time
+      responses:
+        200:
+          description: Lista de histórico de carga
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayOfHistoricoCargaVerificada'
+        401:
+          description: Falha na autenticação
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        500:
+          description: Erro do Servidor Interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+      security:
+      - Bearer: []
+  /cargaglobal/cargap:
+    get:
+      tags:
+      - Historico Carga Global prevista por área de carga
+      description: "Obter a lista de histórico de carga prevista, a partir de uma área
+        de carga dentro de um intervalo de datas (datetime). As áreas de carga são:
+                <li>AC - Acre
+                <li>ALPE - Alagoas-Pernambuco
+                <li>AM - Amazonas
+                <li>AP - Amapá
+                <li>BAOE - Bahia Oeste
+                <li>BASE - Bahia-Sergipe
+                <li>CE - Ceará
+                <li>DF - Distrito Federal
+                <li>ES - Espírito Santo
+                <li>GO - Goiás
+                <li>MA, - Maranhão
+                <li>MG - Mina Gerais
+                <li>MS - Mato Grosso do Sul
+                <li>MT - Mato Grosso
+                <li>NE - Subsistema Nordeste
+                <li>PA - Pará
+                <li>PBRN - Paraíba-Rio Grande do Norte
+                <li>PENE - Perdas NE
+                <li>PES - Perdas S
+                <li>PESE - Perdas SECO
+                <li>PI - Piauí
+                <li>PR - Paraná
+                <li>RJ - Rio de Janeiro
+                <li>RO - Rondônia
+                <li>RR - Roraima
+                <li>RS - Rio Grande do Sul
+                <li>S - Subsistema Sul
+                <li>SC - Santa Catarina
+                <li>SECO - Subsistema Sudeste/Centro-Oeste
+                <li>SP - São Paulo
+                <li>TOCO - Tocantins
+                <li>TON - Tocantins Norte
+                <li>PEN - Perdas"
+      operationId: getCargap
+      parameters:
+      - name: cod_areacarga
+        in: query
+        description: Código da área de carga
+        required: true
+        schema:
+          type: string
+      - name: dat_referencia_ini
+        in: query
+        description: YYYY-MM-DD
+        required: true
+        schema:
+          type: string
+          format: date-time
+      - name: dat_referencia_fim
+        in: query
+        description: YYYY-MM-DD
+        required: true
+        schema:
+          type: string
+          format: date-time
+      responses:
+        200:
+          description: Lista de histórico de carga
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayOfHistoricoCargaPrevista'
+        401:
+          description: Falha na autenticação
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        500:
+          description: Erro do Servidor Interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+      security:
+      - Bearer: []
+  /usinas/geracaoprogramada:
+    get:
+      tags:
+      - Geração programada de Usinas não simuladas
+      description: "Obter a lista de geração programada de uma Usina não Simulada,
+        a partir do núcleo do CEG da Usina, dentro de um intervalo de datas (datetime). <br>Código Único de Empreendimentos de Geração (CEG): Código criado pela ANEEL para identificar única e inequivocamente o empreendimento de geração de energia elétrica. <br>Para recuperar o CEG de um determinado empreendimento onsulte http://www2.aneel.gov.br/scg/Consulta_Empreendimento.asp"
+      operationId: getCeracaoProgramada
+      parameters:
+      - name: cod_nucleoceganeel
+        in: query
+        description: Núcleo do código CEG ANEEL da usina
+        required: true
+        schema:
+          type: string
+      - name: dat_referencia_ini
+        in: query
+        description: YYYY-MM-DD
+        required: true
+        schema:
+          type: string
+          format: date-time
+      - name: dat_referencia_fim
+        in: query
+        description: YYYY-MM-DD
+        required: true
+        schema:
+          type: string
+          format: date-time
+      responses:
+        200:
+          description: Lista de gerações programadas de Usinas não simuladas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayOfHistoricoCargaProgramadaUsina'
+        401:
+          description: Falha na autenticação
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        404:
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+        500:
+          description: Erro do Servidor Interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponse'
+      security:
+      - Bearer: []
+components:
+  schemas:
+    error:
+      type: object
+      properties:
+        hasError:
+          type: boolean
+        errorStack:
+          type: object
+          properties: {}
+        messageId:
+          type: string
+        errorMessage:
+          type: string
+    errorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        tipo:
+          type: string
+        mensagem:
+          type: string
+    HistoricoCarga:
+      type: object
+      properties:
+        Instante:
+          type: string
+        CargaEnergiaGWh:
+          type: string
+        CargaEnergiaMWMed:
+          type: string
+        IdSubSistema:
+          type: string
+    ArrayOfHistoricoCarga:
+      type: object
+      properties:
+        HistoricoCarga:
+          type: array
+          items:
+            $ref: '#/components/schemas/HistoricoCarga'
+    HistoricoCargaOutputmessage:
+      type: object
+      properties:
+        result:
+          $ref: '#/components/schemas/ArrayOfHistoricoCarga'
+        pagina:
+          type: string
+        tamanhoPagina:
+          type: number
+        total:
+          type: number
+        quantidadePaginas:
+          type: number
+    HistoricoCargaVerificada:
+      type: object
+      properties:
+        cod_areacarga:
+          type: string
+          description: Código da área de carga
+          example: RJ
+        dat_referencia:
+          type: string
+          description: Data em horario de brasilia
+          example: 2021-04-01
+        din_referenciautc:
+          type: string
+          description: Instante ao que o dado se refere - carga integralizada no fim
+            do intervalo
+          example: 2021-04-01T03:30:00.000Z
+        val_cargaglobal:
+          type: number
+          description: Valor de carga global em MW - supervisão ONS somada a não supervisionada
+            CCEE/Agentes
+          example: 6472.278
+        val_cargaglobalcons:
+          type: number
+          description: Valor de carga global em MW consistida para os modelos de previsao
+            - supervisão ONS somada a nao supervisionada CCEE/Agentes somada a consistencia
+          example: 6472.278
+        val_consistencia:
+          type: number
+          description: Montante consistido por método de correcao automatico ou por
+            analista responsavel
+          example: 0.0
+        val_cargasup:
+          type: number
+          description: Valor de carga supervisionada - supervisão ONS
+          example: 6265.683
+        val_cargansup:
+          type: number
+          description: Valor de carga não supervisionada - informado CCEE/Agentes
+          example: 206.5946
+    ArrayOfHistoricoCargaVerificada:
+      type: array
+      items:
+        $ref: '#/components/schemas/HistoricoCargaVerificada'
+    HistoricoCargaPrevista:
+      type: object
+      properties:
+        cod_areacarga:
+          type: string
+          description: Código da área de carga
+          example: RJ
+        dat_programacao:
+          type: string
+          description: Data em horario de brasilia
+          example: 2021-04-01
+        din_referenciautc:
+          type: string
+          description: Instante ao que o dado se refere - carga integralizada no fim
+            do intervalo
+          example: 2021-04-01T04:30:00.000Z
+        val_cargaprogramada:
+          type: number
+          description: Valor de carga global programada em MW
+          example: 6627.9336
+    ArrayOfHistoricoCargaPrevista:
+      type: array
+      items:
+        $ref: '#/components/schemas/HistoricoCargaPrevista'
+    HistoricoCargaProgramadaUsina:
+      type: object
+      properties:
+        cod_nucleoceganeel:
+          type: string
+          description: Núcleo do código CEG ANEEL da usina
+          example: "044877"
+        cod_ceg:
+          type: string
+          description: Codigo CEG ANEEL completo da usina
+          example: CGH.PH.MS.044877-0.01
+        nom_aneel:
+          type: string
+          description: Nome da usina na ANEEL
+          example: "044877"
+        dat_referencia:
+          type: string
+          description: Data em que a previsao foi elaborada
+          example: 2021-06-08
+        usi_id:
+          type: string
+          description: Id da usina na Base de Dados Técnica (BDT) do ONS
+          example: MSCOGE
+        pdp_id:
+          type: string
+          description: Id da usina na Programação Diaria da Produção (PDP) do ONS
+          example: D1COGE
+        dsc_tpfonteusianeelorigem:
+          type: string
+          description: Descrição do tipo de fonte
+          example: Hídrica
+        dsc_origemprevisao:
+          type: string
+          description: Descrição da origem da previsão de geração
+          example: Media Semanal com Perfil Medio
+        val_cargaprogramada:
+          type: number
+          description: Valor de Geração programada em MW
+          example: 1.5124
+        din_referenciautc:
+          type: string
+          description: Instante ao que o dado se refere - carga integralizada no fim
+            do intervalo
+          example: 2021-06-09T00:30:00Z
+    ArrayOfHistoricoCargaProgramadaUsina:
+      type: array
+      items:
+        $ref: '#/components/schemas/HistoricoCargaProgramadaUsina'
+    autenticar:
+      type: object
+      properties:
+        usuario:
+          type: string
+        senha:
+          type: string
+          format: ""
+    renovar:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+    ResultadoAutenticacao:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+        expires_in:
+          type: string
+        refresh_token:
+          type: string
+    ErroAutenticacao:
+      type: object
+      properties:
+        error:
+          type: string
+        error_description:
+          type: string
+  securitySchemes:
+    Bearer:
+      type: apiKey
+      name: Authorization
+      in: header
